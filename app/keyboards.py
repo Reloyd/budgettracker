@@ -11,7 +11,7 @@ main = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text='Добавить категории')],
     [KeyboardButton(text='Добавить доход'),
       KeyboardButton(text='Добавить расход')],
-    [KeyboardButton(text='Ваши доходы')],
+    [KeyboardButton(text='Ваши доходы по категориям')],
     [KeyboardButton(text='Ваши расходы по категориям')]
 ], resize_keyboard=True)
 

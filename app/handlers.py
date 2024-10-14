@@ -8,7 +8,6 @@ from datetime import datetime
 import app.keyboards as kb
 from app.middlewares import TestMiddleWare
 import app.database.requests as rq
-import logging
 
 router = Router()
 
@@ -66,7 +65,26 @@ async def count_total_income(user_id: int):
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     await rq.set_user(message.from_user.id)
-    await message.reply('Привет!', reply_markup=kb.main)
+    await message.answer('Привет! Я - бот для управления личными финансами.\n\n'
+                          'Вот краткое руководство по использованию:\n\n'
+                          '1. Выберите действие:\n'
+                          '   - Добавить доход или расход\n'
+                          '   - Просмотреть доходы или расходы\n'
+                          '   - Добавить категорию\n\n'
+                          '2. Для добавления дохода/расхода:\n'
+                          '   - Выберите категорию\n'
+                          '   - Если необходимой категории нет - создайте её\n'
+                          '   - Введите сумму в рублях\n'
+                          '   - Опишите транзакцию\n\n'
+                          '3. Для просмотра статистики:\n'
+                          '   - Выберите категорию для детального просмотра\n'
+                          '   - Просмотрите общие доходы/расходы по всем категориям\n\n'
+                          '4. Для управления категориями:\n'
+                          '   - Добавьте новую категорию\n'
+                          '   - Измените название или сумму существующей категории\n'
+                          '   - Удалите ненужную категорию\n\n'
+                          'Помните, что вы можете возвращаться на предыдущий экран с помощью кнопки "Вернуться".\n\n'
+                          'Если у вас есть вопросы, не стесняйтесь обращаться к администратору бота.', reply_markup=kb.main)
 
 @router.message(F.text == 'Ваши расходы по категориям')
 async def categories(message: Message, state:FSMContext):
@@ -114,6 +132,7 @@ async def add_expense_amount(message: Message, state: FSMContext):
     await state.update_data(amount = message.text)
     await state.set_state(AddExpense.description)
     await message.answer('Введите описание расхода:')
+    await message.reply("Введите корректную сумму (например: 100 или 100.50).")
 
 @router.message(AddExpense.description)
 async def add_income_description(message: Message, state: FSMContext):
@@ -191,7 +210,7 @@ async def stat_category_selected(callback: CallbackQuery, state:FSMContext):
         total_amount += transaction    
     await callback.message.edit_text(f"Общая сумма доходов по этой категории составляет: {total_amount}₽", reply_markup = kb.manage_income_categories)
 
-@router.message(F.text == 'Ваши доходы')
+@router.message(F.text == 'Ваши доходы по категориям')
 async def show_incomes(message: Message):
     total_incomes = await count_total_income(message.from_user.id)
     await message.answer(f'Ваши общие доходы по всем категория составили: {total_incomes}₽\n' +
