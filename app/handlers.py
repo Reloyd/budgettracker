@@ -6,12 +6,9 @@ from aiogram.fsm.context import FSMContext
 from datetime import datetime
 
 import app.keyboards as kb
-from app.middlewares import TestMiddleWare
 import app.database.requests as rq
 
 router = Router()
-
-router.message.outer_middleware(TestMiddleWare())
 
 class AddIncome(StatesGroup):
     category = State()
@@ -132,7 +129,6 @@ async def add_expense_amount(message: Message, state: FSMContext):
     await state.update_data(amount = message.text)
     await state.set_state(AddExpense.description)
     await message.answer('Введите описание расхода:')
-    await message.reply("Введите корректную сумму (например: 100 или 100.50).")
 
 @router.message(AddExpense.description)
 async def add_income_description(message: Message, state: FSMContext):
