@@ -26,6 +26,9 @@ class AddExpense(StatesGroup):
 class AddCategory(StatesGroup):
     name = State()
 
+class AddReplyCategory(StatesGroup):
+    name = State()
+
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
@@ -132,3 +135,16 @@ async def show_incomes(message: Message):
     for income in incomes:
         total_incomes += income
     await message.reply(f"Общая сумма ваших доходов составляет: {total_incomes}₽")
+
+@router.message(F.text == 'Добавить категорию расходов')
+async def add_reply_category(message: Message, state: FSMContext):
+    await state.set_state(AddReplyCategory.name)
+    await message.reply('Введите название категории:')
+
+@router.message(AddReplyCategory.name)
+async def add_reply_category_name(message: Message, state: FSMContext):
+    await state.update_data(name = message.text)
+    data = await state.get_data()
+    await rq.add_category(data['name'], message.from_user.id)
+    await message.answer('Категория успешно создана!', reply_markup=kb.main)
+    await state.clear()
