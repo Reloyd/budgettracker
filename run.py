@@ -10,7 +10,6 @@ from app.handlers import router
 from app.database.models import async_main
 
 
-
 async def main():
     await async_main()
     load_dotenv()

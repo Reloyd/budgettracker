@@ -23,6 +23,7 @@ class Category(Base):
     __tablename__ = 'categories'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    type: Mapped[str] = mapped_column(String(25))
     name: Mapped[str] = mapped_column(String(25))
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
 
