@@ -70,7 +70,7 @@ async def add_expense(message: Message):
 async def add_category(callback: CallbackQuery, state: FSMContext):
     await callback.answer('Вы добавляете новую категорию')
     await state.set_state(AddCategory.name)
-    await callback.message.edit_text('Введи категорию')
+    await callback.message.edit_text('Введите название категории:')
 
 @router.message(AddCategory.name)
 async def add_category_name(message: Message, state: FSMContext):
@@ -87,7 +87,7 @@ async def category_selected(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     category_name = await rq.get_category_by_id(category_id)
     await state.set_state(AddExpense.amount)
-    await callback.message.edit_text(f"Вы выбрали категорию: {category_name}. Введите сумму расхода.")
+    await callback.message.edit_text(f"Вы выбрали категорию: {category_name}. Введите сумму расхода в рублях: ")
 
 @router.message(AddExpense.amount)
 async def add_expense_amount(message: Message, state: FSMContext):
@@ -99,7 +99,7 @@ async def add_expense_amount(message: Message, state: FSMContext):
     )
     await state.update_data(amount = message.text)
     await state.set_state(AddExpense.description)
-    await message.answer('Введите описание расхода')
+    await message.answer('Введите описание расхода:')
 
 @router.message(AddExpense.description)
 async def add_income_description(message: Message, state: FSMContext):
@@ -116,7 +116,7 @@ async def stat_category_selected(callback: CallbackQuery):
     total_amount = 0
     for transaction in transactions:
         total_amount += transaction    
-    await callback.message.reply(f"Общая сумма трат по этой категории составляет: {total_amount}")
+    await callback.message.reply(f"Общая сумма трат по этой категории составляет: {total_amount}₽")
     await callback.answer()
 
 @router.message(F.text == 'Ваши доходы')
@@ -125,4 +125,4 @@ async def show_incomes(message: Message):
     total_incomes = 0
     for income in incomes:
         total_incomes += income
-    await message.reply(f"Общая сумма ваших доходов составляет: {total_incomes}")
+    await message.reply(f"Общая сумма ваших доходов составляет: {total_incomes}₽")
