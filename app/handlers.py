@@ -52,7 +52,6 @@ async def add_income_description(message: Message, state: FSMContext):
     await state.update_data(amount = message.text)
     await state.set_state(AddIncome.description)
     await message.answer('Введите описание дохода')
-    await message.answer('Введите сумму цифрами')
 
 @router.message(AddIncome.description)
 async def add_income_description(message: Message, state: FSMContext):
@@ -61,7 +60,6 @@ async def add_income_description(message: Message, state: FSMContext):
     await rq.add_income(data['amount'], data['description'], data['tg_id'], data['timestamp'])
     await message.answer('Доход успешно добавлен!', reply_markup=kb.main)
     await state.clear()
-    await message.answer('Введите сумму цифрами')
 
 @router.message(F.text == 'Добавить расход')
 async def add_expense(message: Message):
