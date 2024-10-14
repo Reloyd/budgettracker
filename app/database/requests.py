@@ -43,3 +43,7 @@ async def get_transactions_by_category(id: int, tg_id:int):
 async def get_income_transaction(tg_id:int):
     async with async_session() as session:
         return await session.scalars(select(Transaction.amount).where(Transaction.type == 'income', Transaction.user_id == tg_id))
+    
+async def get_total_expense(tg_id:int):
+    async with async_session() as session:
+        return await session.scalars(select(Transaction.amount).where(Transaction.type == 'expense', Transaction.user_id == tg_id))

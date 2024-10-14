@@ -32,9 +32,15 @@ async def cmd_start(message: Message):
     await rq.set_user(message.from_user.id)
     await message.reply('Привет!', reply_markup=kb.main)
 
-@router.message(F.text == 'Категории расходов')
+@router.message(F.text == 'Ваши расходы по категориям')
 async def categories(message: Message):
-    await message.answer('Выберите категорию:', reply_markup=await kb.categories(message.from_user.id))
+    transactions = await rq.get_total_expense(message.from_user.id)
+    total_expense = 0
+    for transaction in transactions:
+        total_expense += transaction
+    await message.answer(f'Ваши общие траты по всем категория составили: {total_expense}₽\n' +
+                          'Выберите категорию, чтоб узнать траты по ней:',
+                            reply_markup=await kb.categories(message.from_user.id))
 
 @router.message(F.text == 'Добавить доход')
 async def add_income_amount(message: Message, state: FSMContext):

@@ -5,10 +5,11 @@ from app.database.models import User
 from app.database.requests import get_categories
 
 main = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text='Категории расходов')],
+    [KeyboardButton(text='Добавить категорию расходов')],
     [KeyboardButton(text='Добавить доход'),
       KeyboardButton(text='Добавить расход')],
-    [KeyboardButton(text='Ваши доходы')]
+    [KeyboardButton(text='Ваши доходы')],
+    [KeyboardButton(text='Ваши расходы по категориям')]
 ], resize_keyboard=True)
 
 async def categories(user_id):
