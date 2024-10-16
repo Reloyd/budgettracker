@@ -86,6 +86,7 @@ async def cmd_start(message: Message):
 @router.message(F.text == 'Ваши расходы по категориям')
 async def categories(message: Message, state:FSMContext):
     total_expense = await count_total_expnese(message.from_user.id)
+    await state.set_state(ManageExpenseCategory.category_id)
     await message.answer(f'Ваши общие траты по всем категория составили: {total_expense}₽\n' +
                           'Выберите категорию, чтоб узнать траты по ней:',
                             reply_markup=await kb.stat_expense_categories(message.from_user.id))
@@ -186,6 +187,7 @@ async def add_income_description(message: Message, state: FSMContext):
     await message.answer('Доход успешно добавлен!', reply_markup=kb.main)
     await state.clear()
 
+@router.message(ManageExpenseCategory.category_id)
 @router.callback_query(F.data.startswith('expense_stat_category_'))
 async def stat_category_selected(callback: CallbackQuery, state:FSMContext):
     category_id = int(callback.data.split("_")[3])
@@ -270,6 +272,7 @@ async def edit_name_expense_category_final(message: Message, state: FSMContext):
                                     'Выберите категорию, чтоб узнать траты по ней:',
                                     reply_markup = await kb.stat_expense_categories(message.from_user.id))
 
+@router.message(ManageExpenseCategory.category_id)
 @router.callback_query(F.data == 'delete_expense_category')
 async def delete_expense_category(callback: CallbackQuery, state:FSMContext):
     user_data = await state.get_data()
@@ -296,8 +299,7 @@ async def edit_expense_amount_final(message: Message, state: FSMContext):
     await message.answer(f'Ваши общие траты по всем категория составили: {total_expense}₽\n' +
                                     'Выберите категорию, чтоб узнать траты по ней:',
                                     reply_markup = await kb.stat_expense_categories(message.from_user.id))
-    
-#123
+
 @router.callback_query(F.data == 'income_back')
 async def back_to_income_categories(callback: CallbackQuery, state:FSMContext):
     await callback.message.delete()
