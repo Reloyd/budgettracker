@@ -62,12 +62,12 @@ async def get_total_expense(tg_id:int):
     async with async_session() as session:
         return await session.scalars(select(Transaction.amount).where(Transaction.type == 'expense', Transaction.user_id == tg_id))    
 
-async def update_category_name(id: int, tg_id: int, new_name: str):
+async def update_category_name(transaction_id: int, category_id:int, tg_id: int, new_name: str):
     async with async_session() as session:
         stmt = (
-            update(Category)
-            .where(Category.id == id, Category.user_id == tg_id)
-            .values(name=new_name)
+            update(Transaction)
+            .where(Transaction.id == transaction_id, Transaction.user_id == tg_id, Transaction.category == category_id)
+            .values(description=new_name)
         )
         await session.execute(stmt)
         await session.commit()
@@ -81,21 +81,32 @@ async def delete_category(id: int, tg_id: int):
         await session.execute(stmt)
         await session.commit()
 
-async def delete_transactions_by_category(id: int, tg_id: int):
+async def delete_transaction_by_id(transaction_id: int, category_id: int, tg_id: int):
     async with async_session() as session:
         stmt = (
             delete(Transaction)
-            .where(Transaction.category == id, Transaction.user_id == tg_id)
+            .where(Transaction.category == category_id, Transaction.user_id == tg_id, Transaction.id == transaction_id)
         )
         await session.execute(stmt)
         await session.commit()
 
-async def update_transaction_amount(id: int, tg_id: int, new_amount: int):
+async def update_transaction_amount(transaction_id: int, category_id: int, tg_id: int, new_amount: int):
     async with async_session() as session:
         stmt = (
             update(Transaction)
-            .where(Transaction.category == id, Transaction.user_id == tg_id)
+            .where(Transaction.category == category_id, Transaction.user_id == tg_id, Transaction.id == transaction_id)
             .values(amount=new_amount)
         )
         await session.execute(stmt)
         await session.commit()
+
+async def get_all_expense_transactions_by_category(id: int, tg_id: int):
+    async with async_session() as session:
+        result = await session.scalars(
+            select(Transaction).where(
+                Transaction.type == 'expense',
+                Transaction.user_id == tg_id,
+                Transaction.category == id
+            )
+        )
+        return result

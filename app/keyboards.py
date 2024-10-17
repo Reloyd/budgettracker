@@ -5,7 +5,7 @@ from datetime import datetime
 
 import logging
 
-from app.database.requests import get_expense_categories, get_income_categories
+from app.database.requests import get_expense_categories, get_income_categories, get_all_expense_transactions_by_category
 
 main = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text='Добавить категории')],
@@ -15,10 +15,10 @@ main = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text='Ваши расходы по категориям')]
 ], resize_keyboard=True)
 
-manage_expense_categories = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Изменить название категории', callback_data='edit_expense_name')],
-    [InlineKeyboardButton(text='Изменить сумму трат по категории', callback_data='edit_expense_amount')],
-    [InlineKeyboardButton(text='Удалить категорию', callback_data='delete_expense_category')],
+manage_expense_transaction = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Изменить описание транзакции', callback_data='edit_expense_transaction_name')],
+    [InlineKeyboardButton(text='Изменить сумму трат по транзакции', callback_data='edit_expense_amount')],
+    [InlineKeyboardButton(text='Удалить транзакцию', callback_data='delete_expense_transaction')],
     [InlineKeyboardButton(text='Вернуться назад', callback_data='expense_back')]
 ])
 
@@ -66,4 +66,22 @@ async def income_categories(user_id):
     keyboard.add(InlineKeyboardButton(text='Добавить категорию', callback_data='new_income_category'))
     return keyboard.adjust(1).as_markup()
 
+async def expense_transactions(id, user_id):
+    all_transactions_scalar_result = await get_all_expense_transactions_by_category(id, user_id)
+    all_transactions = list(all_transactions_scalar_result)
+    
+    keyboard = InlineKeyboardBuilder()
+    
+    for transaction in all_transactions:
+        logging.info(transaction)
+        keyboard.add(
+            InlineKeyboardButton(
+                text=f'{transaction.description} - {transaction.amount} - {transaction.timestamp:%Y-%m-%d %H:%M}',
+                callback_data=f"expense_transaction_{transaction.id}"
+            )
+        )
+
+    keyboard.add(InlineKeyboardButton(text='Вернуться назад', callback_data='back_to_expense_categories'))
+    
+    return keyboard.adjust(1).as_markup()
     

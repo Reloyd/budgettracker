@@ -34,6 +34,7 @@ class AddReplyIncomeCategory(StatesGroup):
 
 class ManageExpenseCategory(StatesGroup):
     category_id = State()
+    transaction_id = State()
     new_name = State()
     new_amount = State()
 
@@ -58,6 +59,13 @@ async def count_total_income(user_id: int):
     for income in incomes:
         total_incomes += income
     return total_incomes
+
+async def count_category_expense(category_id: int, user_id: int):
+    transactions = await rq.get_expense_transactions_by_category(category_id, user_id)
+    total_amount = 0
+    for transaction in transactions:
+        total_amount += transaction
+    return total_amount 
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
@@ -192,11 +200,16 @@ async def add_income_description(message: Message, state: FSMContext):
 async def stat_category_selected(callback: CallbackQuery, state:FSMContext):
     category_id = int(callback.data.split("_")[3])
     await state.update_data(category_id=category_id)
-    transactions = await rq.get_expense_transactions_by_category(category_id, callback.from_user.id)
-    total_amount = 0
-    for transaction in transactions:
-        total_amount += transaction    
-    await callback.message.edit_text(f"Общая сумма трат по этой категории составляет: {total_amount}₽", reply_markup = kb.manage_expense_categories)
+    total_expense = await count_category_expense(category_id, callback.from_user.id)
+    await state.set_state(ManageExpenseCategory.transaction_id)    
+    await callback.message.edit_text(f"Общая сумма трат по этой категории составляет: {total_expense}₽", reply_markup = await kb.expense_transactions(category_id, callback.from_user.id))
+
+@router.message(ManageExpenseCategory.transaction_id)
+@router.callback_query(F.data.startswith('expense_transaction_'))
+async def expense_transaction_selected(callback: CallbackQuery, state:FSMContext):
+    transaction_id = int(callback.data.split("_")[2])
+    await state.update_data(transaction_id = transaction_id)
+    await callback.message.edit_text(f"Выберите что сделать:", reply_markup=kb.manage_expense_transaction)
 
 @router.callback_query(F.data.startswith('income_stat_category_'))
 async def stat_category_selected(callback: CallbackQuery, state:FSMContext):
@@ -250,40 +263,48 @@ async def add_reply_expense_category_name(message: Message, state: FSMContext):
 
 @router.callback_query(F.data == 'expense_back')
 async def back_to_expense_categories(callback: CallbackQuery, state:FSMContext):
+    user_data = await state.get_data()
+    await callback.message.delete()
+    total_expense = await count_category_expense(user_data['category_id'], callback.from_user.id)
+    await callback.message.answer(f'Ваши общие траты по всем категория составили: {total_expense}₽\n' +
+                                    'Выберите категорию, чтоб узнать траты по ней:',
+                                    reply_markup = await kb.expense_transactions(user_data['category_id'], callback.from_user.id))
+    
+@router.callback_query(F.data == 'back_to_expense_categories')
+async def back_to_expense_categories(callback: CallbackQuery, state:FSMContext):
     await callback.message.delete()
     total_expense = await count_total_expnese(callback.from_user.id)
     await callback.message.answer(f'Ваши общие траты по всем категория составили: {total_expense}₽\n' +
                                     'Выберите категорию, чтоб узнать траты по ней:',
                                     reply_markup = await kb.stat_expense_categories(callback.from_user.id))
 
-@router.callback_query(F.data == 'edit_expense_name')
-async def edit_name_expense_category(callback: CallbackQuery, state:FSMContext):
+@router.callback_query(F.data == 'edit_expense_transaction_name')
+async def edit_name_expense_transaction(callback: CallbackQuery, state:FSMContext):
     await state.set_state(ManageExpenseCategory.new_name)
-    await callback.message.reply('Введите новое название категории:')
+    await callback.message.reply('Введите новое описание транзакции:')
     await callback.answer()
 
 @router.message(ManageExpenseCategory.new_name)
 async def edit_name_expense_category_final(message: Message, state: FSMContext):
     await state.update_data(new_name = message.text)
     user_data = await state.get_data()
-    await rq.update_category_name(user_data['category_id'], message.from_user.id, user_data['new_name'])
+    await rq.update_category_name(user_data['transaction_id'], user_data['category_id'], message.from_user.id, user_data['new_name'])
     total_expense = await count_total_expnese(message.from_user.id)
     await message.answer(f'Ваши общие траты по всем категория составили: {total_expense}₽\n' +
                                     'Выберите категорию, чтоб узнать траты по ней:',
                                     reply_markup = await kb.stat_expense_categories(message.from_user.id))
 
 @router.message(ManageExpenseCategory.category_id)
-@router.callback_query(F.data == 'delete_expense_category')
+@router.callback_query(F.data == 'delete_expense_transaction')
 async def delete_expense_category(callback: CallbackQuery, state:FSMContext):
     user_data = await state.get_data()
-    await rq.delete_category(user_data['category_id'], callback.from_user.id)
-    await rq.delete_transactions_by_category(user_data['category_id'], callback.from_user.id)
+    await rq.delete_transaction_by_id(user_data['transaction_id'], user_data['category_id'], callback.from_user.id)
     total_expense = await count_total_expnese(callback.from_user.id)
     await callback.message.delete()
     await callback.message.answer(f'Ваши общие траты по всем категория составили: {total_expense}₽\n' +
                                     'Выберите категорию, чтоб узнать траты по ней:',
                                     reply_markup = await kb.stat_expense_categories(callback.from_user.id))
-    
+
 @router.callback_query(F.data == 'edit_expense_amount')
 async def edit_expense_amount(callback: CallbackQuery, state:FSMContext):
     await state.set_state(ManageExpenseCategory.new_amount)
@@ -294,7 +315,7 @@ async def edit_expense_amount(callback: CallbackQuery, state:FSMContext):
 async def edit_expense_amount_final(message: Message, state: FSMContext):
     await state.update_data(new_amount = message.text)
     user_data = await state.get_data()
-    await rq.update_transaction_amount(user_data['category_id'],message.from_user.id, user_data['new_amount'])
+    await rq.update_transaction_amount(user_data['transaction_id'], user_data['category_id'],message.from_user.id, user_data['new_amount'])
     total_expense = await count_total_expnese(message.from_user.id)
     await message.answer(f'Ваши общие траты по всем категория составили: {total_expense}₽\n' +
                                     'Выберите категорию, чтоб узнать траты по ней:',
