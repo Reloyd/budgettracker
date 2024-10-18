@@ -269,6 +269,7 @@ async def back_to_expense_categories(callback: CallbackQuery, state:FSMContext):
     await callback.message.answer(f'Ваши общие траты по всем категория составили: {total_expense}₽\n' +
                                     'Выберите категорию, чтоб узнать траты по ней:',
                                     reply_markup = await kb.expense_transactions(user_data['category_id'], callback.from_user.id))
+    await state.clear()
     
 @router.callback_query(F.data == 'back_to_expense_categories')
 async def back_to_expense_categories(callback: CallbackQuery, state:FSMContext):
@@ -277,6 +278,7 @@ async def back_to_expense_categories(callback: CallbackQuery, state:FSMContext):
     await callback.message.answer(f'Ваши общие траты по всем категория составили: {total_expense}₽\n' +
                                     'Выберите категорию, чтоб узнать траты по ней:',
                                     reply_markup = await kb.stat_expense_categories(callback.from_user.id))
+    await state.clear()
 
 @router.callback_query(F.data == 'edit_expense_transaction_name')
 async def edit_name_expense_transaction(callback: CallbackQuery, state:FSMContext):
@@ -293,6 +295,7 @@ async def edit_name_expense_category_final(message: Message, state: FSMContext):
     await message.answer(f'Ваши общие траты по всем категория составили: {total_expense}₽\n' +
                                     'Выберите категорию, чтоб узнать траты по ней:',
                                     reply_markup = await kb.stat_expense_categories(message.from_user.id))
+    await state.clear()
 
 @router.message(ManageExpenseCategory.category_id)
 @router.callback_query(F.data == 'delete_expense_transaction')
@@ -304,6 +307,7 @@ async def delete_expense_category(callback: CallbackQuery, state:FSMContext):
     await callback.message.answer(f'Ваши общие траты по всем категория составили: {total_expense}₽\n' +
                                     'Выберите категорию, чтоб узнать траты по ней:',
                                     reply_markup = await kb.stat_expense_categories(callback.from_user.id))
+    await state.clear()
 
 @router.callback_query(F.data == 'edit_expense_amount')
 async def edit_expense_amount(callback: CallbackQuery, state:FSMContext):
@@ -320,6 +324,7 @@ async def edit_expense_amount_final(message: Message, state: FSMContext):
     await message.answer(f'Ваши общие траты по всем категория составили: {total_expense}₽\n' +
                                     'Выберите категорию, чтоб узнать траты по ней:',
                                     reply_markup = await kb.stat_expense_categories(message.from_user.id))
+    await state.clear()
 
 @router.callback_query(F.data == 'income_back')
 async def back_to_income_categories(callback: CallbackQuery, state:FSMContext):
